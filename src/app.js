@@ -3,43 +3,57 @@
 
 const fs = require('fs');
 const path = require('path');
-const [source, destination] = process.argv.slice(2);
 
 function mv(from, to) {
   if (!from || !to) {
     console.error('Usage: node yourScript.js <source> <destination>');
+
+    return;
   }
 
   const fullFromPath = path.resolve(from);
-  const fullDestinationPath = path.resolve(to);
+  const fullDestPath = path.resolve(to);
 
-  let newPath = fullDestinationPath;
+  if (!fs.existsSync(fullFromPath)) {
+    console.error('Initial location do not exist!!!');
 
-  try {
-    const destStat = fs.statSync(fullDestinationPath);
+    return;
+  }
 
-    if (destStat.isDirectory()) {
-      newPath = path.join(fullDestinationPath, path.basename(from));
-    }
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      console.error('Destination path does not exist.');
-    } else {
-      console.error('Failed to check destination path:', err);
-    }
+  let newPath;
+  const destDir = path.dirname(fullDestPath);
+  const isDestExist = fs.existsSync(fullDestPath);
+
+  if (!fs.existsSync(destDir)) {
+    console.error('Destination directory do not exist!!!');
+
+    return;
+  }
+
+  if (isDestExist) {
+    const destStat = fs.statSync(fullDestPath);
+    const destIsDirecory = destStat.isDirectory();
+
+    newPath = destIsDirecory
+      ? path.join(fullDestPath, path.basename(from))
+      : fullDestPath;
+  } else if (!path.extname(fullDestPath)) {
+    newPath = fullDestPath;
+  } else {
+    console.error('Destination does not exist xD');
+
+    return;
   }
 
   try {
     fs.renameSync(fullFromPath, newPath);
     console.log('File moved successfully');
   } catch (err) {
-    if (err.code === 'ENOENT') {
-      console.error('Source path does not exist.');
-    } else {
-      console.error('Failed to move file:', err);
-    }
+    console.error('Failed to move file:', err);
   }
 }
+
+const [source, destination] = process.argv.slice(2);
 
 mv(source, destination);
 
